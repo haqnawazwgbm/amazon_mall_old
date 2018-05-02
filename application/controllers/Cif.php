@@ -5,6 +5,7 @@
 class Cif extends CI_Controller
 {
 	private $agent_id;
+	private $user_type;
 	function __construct()
 	{
 		parent::__construct();
@@ -12,8 +13,8 @@ class Cif extends CI_Controller
 		if ($this->session->userdata('logged') != true) {
 			redirect(base_url().'Login');
 		}
-		$type = $this->session->userdata('user_type');
-		if ($type != "Admin" && $type != "Agent" && $type != 'ccd') {
+		$this->user_type = $this->session->userdata('user_type');
+		if ($this->user_type != "Admin" && $this->user_type != "Agent" && $this->user_type != 'ccd') {
 			redirect(base_url().'Login');
 		}
 	}
@@ -167,10 +168,17 @@ class Cif extends CI_Controller
 			array('users.type' => 'User', 'users.agent_id' => $this->agent_id)
 		);*/
 		$con['selection'] = '*';
-		$con['conditions'] = array(
-		    'users.type' => 'User',
-		    'users.agent_id' => $this->agent_id
-		 );
+		if ($this->user_type == 'ccd' || $this->user_type == 'Admin') {
+			$con['conditions'] = array(
+			    'users.type' => 'User'
+			);
+		} else {
+			$con['conditions'] = array(
+			    'users.type' => 'User',
+			    'users.agent_id' => $this->agent_id
+		 	);
+		}
+		
 		$con['innerJoin'] = array(array(
             'table' => 'countries',
             'condition' =>'users.country = countries.id',
