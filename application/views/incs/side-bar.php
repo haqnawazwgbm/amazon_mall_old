@@ -49,7 +49,7 @@
                     <li>
                     <a href="<?php echo base_url() ?>Sales/review_sales">
                         <span class="fa fa-desktop"></span> 
-                        <span class="xn-text">Review Sales</span>
+                        <span class="xn-text">Review Sale Documents</span>
                     </a>                        
                 </li>
                 <?php endif; ?>

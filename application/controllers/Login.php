@@ -23,8 +23,8 @@ class Login extends CI_Controller {
 
 	function signup()
 	{
-		$login 		= $this->input->post('email');
-		$password 	= md5($this->input->post('password'));
+		$login 		= strip_tags($this->input->post('email'));
+		$password 	= strip_tags(md5($this->input->post('password')));
 		if (empty($login) || empty($password)) {
 			$Message = array('Message' => 'Please Fill The Fields','type' => 'default');
 			$this->index($Message);

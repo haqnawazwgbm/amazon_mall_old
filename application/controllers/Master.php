@@ -14,7 +14,7 @@ class Master extends CI_Controller
 			redirect(base_url().'Login');
 		}
 		$type = $this->session->userdata('user_type');
-		if ($type != "Admin" ) {
+		if ($type != "Admin" && $type != 'ccd' ) {
 			redirect(base_url().'Login');
 		}
 	}
