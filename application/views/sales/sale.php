@@ -26,10 +26,12 @@ td, th {
             <div class="page-content-wrap">                
                 <div class="row">
                     <div class="col-md-12 mar-2">
+                        <?php if ($this->uri->segment(2) != 'review_sales') :  ?>
                         <ul class="nav nav-tabs bootstrap-tabs">
                             <li class="<?= $this->uri->segment(2) == '' ? 'active' : ''; ?>"><a href="<?= base_url(); ?>Sales/">Sold</a></li>
                             <li class="<?= $this->uri->segment(2) == 'hold' ? 'active' : ''; ?>"><a href="<?= base_url(); ?>Sales/hold">Hold</a></li>
                         </ul>
+                    <?php endif; ?>
                         <div class="col-md-12" id="forTackback" style="display: none;">
                             <div class="panel panel-danger">
                                 <div class="panel-body">

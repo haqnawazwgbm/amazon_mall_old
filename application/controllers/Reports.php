@@ -563,6 +563,109 @@ class Reports extends CI_Controller
 		$this->load->view('reports/resold_reports.php', $data);
 	}
 
+	function rent($action = '') {	
+		$data['project'] = $this->Admin->getAllData('project');
+		if ($action == 'get') {
+			$project_id = $this->input->post('project_id');
+			$date = date('Y-m');
+			$date = strtotime($date . ' - 1 month');
+			$date = date('Y-m',$date);
+			$current_date = date('Y-m-d');
+			if ($project !="Select Project"):
+							
+				$con['selection'] = "sale.sale_id, basic_floors.floor_types, basic_floors.rent_price as rent_sqft, sales_units.unit_type, sales_units.size_sqft, sum(installments.remaining) as remaining, MAX(installments.updated_at) as last_paid, users.fullname, (sales_units.size_sqft * basic_floors.rent_price) as total_rent, DATEDIFF('$current_date',installments.updated_at) as days";
+				$con['conditions'] = array(
+					'sale.resale' => 0,
+					'basic_floors.project_id' => $project_id 
+				);
+				$con['innerJoin'] = array(array(
+		            'table' => 'basic_floors',
+		            'condition' =>'sale.floor_id = basic_floors.floor_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'users',
+		            'condition' =>'sale.user_id = users.user_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'sales_units',
+		            'condition' =>'sale.unit_id = sales_units.unit_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'installments',
+		            'condition' =>'sale.sale_id = installments.sale_id',
+		            'joinType' => 'inner'
+		        ));
+		        $con['groupBy'] = array('sale.sale_id');
+		        $con['returnType'] = 'object';
+		        $con['having_conditions'] = array(
+		        	'remaining <=' => 0
+		        );
+		        $sales = $this->Admin->getRows($con, 'sale');
+		        $data['sales'] = $sales ? $sales : array();
+		        $data['filter_data'] = array(
+					'sale.resale' => 0,
+					'basic_floors.project_id' => $project_id 
+				);
+		     /*   echo '<pre>';
+		        print_r($data); exit;*/
+		    	$this->load->view('reports/rent_report',$data);
+			
+			elseif(!empty($from) && !empty($to)):
+				
+				$this->load->view('reports/rent_report',$data);
+			else:
+				$data['project'] = $this->Admin->getAllData('project');
+			endif;
+
+		}  else {
+			$data['project'] = $this->Admin->getAllData('project');
+			$this->load->view('reports/rent_report_form.php', $data);
+		}
+		
+	}
+
+	function rent_pdf() {	
+			$data['project'] = $this->Admin->getAllData('project');
+				$date = date('Y-m');
+				$date = strtotime($date . ' - 1 month');
+				$date = date('Y-m',$date);
+				$current_date = date('Y-m-d');					
+				$con['selection'] = "sale.sale_id, basic_floors.floor_types, basic_floors.rent_price as rent_sqft, sales_units.unit_type, sales_units.size_sqft, sum(installments.remaining) as remaining, MAX(installments.updated_at) as last_paid, users.fullname, (sales_units.size_sqft * basic_floors.rent_price) as total_rent, DATEDIFF('$current_date',installments.updated_at) as days";
+				$con['conditions'] = $this->session->userdata('filter_data');
+				$con['innerJoin'] = array(array(
+		            'table' => 'basic_floors',
+		            'condition' =>'sale.floor_id = basic_floors.floor_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'users',
+		            'condition' =>'sale.user_id = users.user_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'sales_units',
+		            'condition' =>'sale.unit_id = sales_units.unit_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'installments',
+		            'condition' =>'sale.sale_id = installments.sale_id',
+		            'joinType' => 'inner'
+		        ));
+		        $con['groupBy'] = array('sale.sale_id');
+		        $con['returnType'] = 'object';
+		        $con['having_conditions'] = array(
+		        	'remaining <=' => 0
+		        );
+		        $sales = $this->Admin->getRows($con, 'sale');
+		        $data['sales'] = $sales ? $sales : array();
+
+		    	$filename = time()."_order.pdf";
+				$html = $this->load->view('reports/pdf_rent_report',$data, true);
+				$this->ppdf->pdf->WriteHTML($html);
+				$this->ppdf->pdf->Output("assets/uploads/files/".$filename, "D");
+			
+		
+		
+	}
+
 	function get_resales() {
 		print_r($_POST); exit;
 		$this->load->view('sales/resales');

@@ -62,6 +62,14 @@ class Admin extends CI_Model
                 $this->db->where($key,$value);
             }
         }
+
+        //fetch data by having condition
+        if(array_key_exists("having_conditions",$params)){
+           
+            foreach ($params['having_conditions'] as $key => $value) {
+                $this->db->having($key,$value);
+            }
+        }
         
         if(array_key_exists("id",$params)){
             $this->db->where('id',$params['id']);

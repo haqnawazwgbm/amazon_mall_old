@@ -143,6 +143,7 @@
                 <li><a href="<?php echo base_url();?>Reports/AgentsReport">Agents Sales Report</a></li>
                 <li><a href="<?php echo base_url();?>Reports/ClientReport">Clients Report</a></li>
                 <li><a href="<?php echo base_url();?>Reports/resold">Resold Report</a></li>
+                <li><a href="<?php echo base_url();?>Reports/rent">Rent Report</a></li>
             </ul>
         </li>  
         <li>

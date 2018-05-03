@@ -116,7 +116,7 @@ class Sales extends CI_Controller
 				</div>';
 			} elseif ($type == 'review_sales') {
 				$Buttons = '
-				<a class="btn btn-primary" onclick="approve_sale('.$each->sale_id.')">Approve</a>';
+				<a class="btn btn-primary" onclick="approve_sale('.$each->sale_id.')">Reviewed</a>';
 			} else {
 				$Buttons = '
 				<div class="dropdown">
