@@ -11,6 +11,7 @@ class Reports extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->library('Ppdf');
+		$this->load->library('Xls');
 	}
 	
 	/**
@@ -573,7 +574,7 @@ class Reports extends CI_Controller
 			$current_date = date('Y-m-d');
 			if ($project !="Select Project"):
 							
-				$con['selection'] = "sale.sale_id, basic_floors.floor_types, basic_floors.rent_price as rent_sqft, sales_units.unit_type, sales_units.size_sqft, sum(installments.remaining) as remaining, MAX(installments.updated_at) as last_paid, users.fullname, (sales_units.size_sqft * basic_floors.rent_price) as total_rent, DATEDIFF('$current_date',installments.updated_at) as days";
+				$con['selection'] = "sale.sale_id, basic_floors.floor_types, basic_floors.rent_price as rent_sqft, sales_units.unit_type, sales_units.size_sqft, sum(installments.remaining) as remaining, MAX(installments.updated_at) as last_paid, users.fullname, (sales_units.size_sqft * basic_floors.rent_price) as total_rent, DATEDIFF('$current_date',installments.updated_at) as installment_days, DATEDIFF('$current_date', sale.updated_at) as sale_days, project.project_name";
 				$con['conditions'] = array(
 					'sale.resale' => 0,
 					'basic_floors.project_id' => $project_id 
@@ -594,6 +595,10 @@ class Reports extends CI_Controller
 		            'table' => 'installments',
 		            'condition' =>'sale.sale_id = installments.sale_id',
 		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'project',
+		            'condition' =>'basic_floors.project_id = project.project_id',
+		            'joinType' => 'inner'
 		        ));
 		        $con['groupBy'] = array('sale.sale_id');
 		        $con['returnType'] = 'object';
@@ -606,7 +611,7 @@ class Reports extends CI_Controller
 					'sale.resale' => 0,
 					'basic_floors.project_id' => $project_id 
 				);
-		     /*   echo '<pre>';
+		      /*  echo '<pre>';
 		        print_r($data); exit;*/
 		    	$this->load->view('reports/rent_report',$data);
 			
@@ -624,13 +629,13 @@ class Reports extends CI_Controller
 		
 	}
 
-	function rent_pdf() {	
+	function rent_pdf($type) {	
 			$data['project'] = $this->Admin->getAllData('project');
 				$date = date('Y-m');
 				$date = strtotime($date . ' - 1 month');
 				$date = date('Y-m',$date);
 				$current_date = date('Y-m-d');					
-				$con['selection'] = "sale.sale_id, basic_floors.floor_types, basic_floors.rent_price as rent_sqft, sales_units.unit_type, sales_units.size_sqft, sum(installments.remaining) as remaining, MAX(installments.updated_at) as last_paid, users.fullname, (sales_units.size_sqft * basic_floors.rent_price) as total_rent, DATEDIFF('$current_date',installments.updated_at) as days";
+				$con['selection'] = "sale.sale_id, basic_floors.floor_types, basic_floors.rent_price as rent_sqft, sales_units.unit_type, sales_units.size_sqft, sum(installments.remaining) as remaining, MAX(installments.updated_at) as last_paid, users.fullname, (sales_units.size_sqft * basic_floors.rent_price) as total_rent, DATEDIFF('$current_date',installments.updated_at) as installment_days, DATEDIFF('$current_date', sale.updated_at) as sale_days, project.project_name";
 				$con['conditions'] = $this->session->userdata('filter_data');
 				$con['innerJoin'] = array(array(
 		            'table' => 'basic_floors',
@@ -648,19 +653,65 @@ class Reports extends CI_Controller
 		            'table' => 'installments',
 		            'condition' =>'sale.sale_id = installments.sale_id',
 		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'project',
+		            'condition' =>'basic_floors.project_id = project.project_id',
+		            'joinType' => 'inner'
 		        ));
 		        $con['groupBy'] = array('sale.sale_id');
-		        $con['returnType'] = 'object';
+		      // /  $con['returnType'] = 'object';
 		        $con['having_conditions'] = array(
 		        	'remaining <=' => 0
 		        );
 		        $sales = $this->Admin->getRows($con, 'sale');
 		        $data['sales'] = $sales ? $sales : array();
+		        if ($type == 'excel') {
+		        	$filename = time()."_order.xls";
 
-		    	$filename = time()."_order.pdf";
-				$html = $this->load->view('reports/pdf_rent_report',$data, true);
-				$this->ppdf->pdf->WriteHTML($html);
-				$this->ppdf->pdf->Output("assets/uploads/files/".$filename, "D");
+					$sheet = $this->xls->spreadsheet->getActiveSheet();
+					/*$this->xls->spreadsheet->getProperties()
+					    ->setCreator("Maarten Balliauw")
+					    ->setLastModifiedBy("Maarten Balliauw")
+					    ->setTitle("Office 2007 XLSX Test Document")
+					    ->setSubject("Office 2007 XLSX Test Document")
+					    ->setDescription(
+					        "Test document for Office 2007 XLSX, generated using PHP classes."
+					    )
+					    ->setKeywords("office 2007 openxml php")
+					    ->setCategory("Test result file");
+					$this->xls->spreadsheet->setActiveSheetIndex(0);
+					foreach ($sales as $sale): 
+						
+						if ($sale->installment_days < 30 && $sale->installment_days != '') {
+								$rent = $sale->total_rent / 30;
+								$rent = $rent * $sale->installment_days;
+								$days = $sale->installment_days;
+							} elseif ($sale->sale_days < 30 && $sale->installment_days == '') {
+								$rent = $sale->total_rent / 30;
+								$rent = $rent * $sale->sale_days;
+								$days = $sale->sale_days;
+							} elseif ($sale->sale_days > 30 && $sale->installment_days == '') {
+								$rent = $sale->total_rent;
+								$days = $sale->sale_days;
+							} else {
+								$rent = $sale->total_rent;
+								$days = $sale->installment_days;
+						}
+						$total_rent = $total_rent + $rent;
+					
+					endforeach; */
+					
+					$sheet->setCellValue('A1', 'Hello World !');
+					$writer = $this->xls->excel;
+					$result = $writer->save($filename);
+
+		        } else {
+		        	$filename = time()."_order.pdf";
+					$html = $this->load->view('reports/pdf_rent_report',$data, true);
+					$this->ppdf->pdf->WriteHTML($html);
+					$this->ppdf->pdf->Output("assets/uploads/files/".$filename, "D");
+		        }
+		    	
 			
 		
 		

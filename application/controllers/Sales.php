@@ -716,6 +716,10 @@ function ReceiveInstallment()
 			}
 		}
 	}
+		/*$updateAll = array(
+			'updated_at' => date("Y-m-d h:i:s")
+		);
+		$update = $this->Admin->UpdateDB('sale',array('sale_id' => $saleid),$updateAll);*/
 }
 
 function TackBackPayment()
