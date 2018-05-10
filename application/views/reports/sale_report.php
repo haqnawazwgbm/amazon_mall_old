@@ -25,7 +25,7 @@
                                 <form id="Report">
                                     <div class="col-md-3">
                                         <label for="#">Project</label>
-                                        <select name="project" class="form-control select" data-live-search="true">
+                                        <select onchange="getsearchFloors($(this).val())" name="project" class="form-control select" data-live-search="true">
                                             <option> Select Project</option>
                                              <?php if (!empty($project)): ?>
                                                 <?php foreach ($project as $one): ?>
@@ -34,17 +34,7 @@
                                             <?php endif ?>
                                         </select>
                                     </div>
-                                    <div class="col-md-3">
-                                        <label for="#">Floor</label>
-                                        <select name="floor" class="form-control select" data-live-search="true">
-                                            <option> Select Floor</option>
-                                            <?php if (!empty($floor)): ?>
-                                                <?php foreach ($floor as $get): ?>
-                                                    <option value="<?php echo $get->floor_id; ?>"><?php echo $get->floor_types; ?></option>
-                                                <?php endforeach ?>
-                                            <?php endif ?>
-                                        </select>
-                                    </div>
+                                   <div id="getSearchfloors"></div>
                                     <div class="col-md-2">
                                         <label for="#">From</label>
                                         <input type="text" name="from" class="form-control datepicker">
@@ -74,6 +64,9 @@
     <?php $this->load->view('./incs/jquery-footer') ?>  
     <script type="text/javascript" src="<?php echo base_url()?>assets/js/plugins/datatables/jquery.dataTables.min.js"></script>    
     <script type="text/javascript" src="<?php echo base_url()?>assets/js/plugins/bootstrap/bootstrap-select.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.12.12/xlsx.core.min.js"></script>
+    <script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/TableExport/5.0.0/js/tableexport.min.js"></script>
     <script>
         $(document).ready(function (e) {
             $("#Report").on('submit',(function(e) {
@@ -88,10 +81,20 @@
                 success: function(res)  
                 {
                     $('#resultReports').html(res);
+                     var tables = $("table").tableExport({
+                         formats: ["xls"]
+                    });
+                    $('table').tableExport().remove();
                 }
             });
           }));
         });
+        function getsearchFloors(id)
+        {
+            $.post('<?php echo base_url('Cif/getsearchFloors') ?>', {id:id}, function(data, textStatus, xhr) {
+                $('#getSearchfloors').html(data);
+            });
+        }
     </script>
 </body>
 </html>

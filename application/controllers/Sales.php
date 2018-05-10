@@ -350,13 +350,17 @@ class Sales extends CI_Controller
 								echo 'Rs.'.$total;
 								?>
 							<?php else: ?>
-								<?php echo 'Rs.'.$getone->total_payment; ?>
-							<?php endif ?>
+								<?php $total = $price * @$getSaleunit[0]->size; 
+									echo $total;
+								?>
+							<?php endif;
+								
+							?>
 						</td>
 					</tr>
 				</table>
 				<?php 
-				echo '<input type="hidden" id="TotalPayment" value="'.$getone->total_payment.'">';
+				echo '<input type="hidden" id="TotalPayment" value="'.$total.'">';
 				if ($getone->recieved_token != '0'){ ?>
 
 				<div class="col-md-4">

@@ -1,7 +1,8 @@
 <?php $this->session->set_userdata('filter_data',$filter_data); ?>
 <br>
+
 <a style="margin-left:1em;" href="<?php echo base_url('Reports/rent_pdf'); ?>" class="btn btn-primary">Print PDF</a>
-<a style="margin-left:1em;" href="<?php echo base_url('Reports/rent_pdf/excel'); ?>" class="btn btn-primary">Print Excel</a>
+<button style="margin-left:1em;" tableexport-id="396a47fc-xls" href="#" class="btn btn-primary xls">Print Excel</button>
 <br>
 <br>
 <table class="table table-condensed">

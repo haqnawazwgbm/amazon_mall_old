@@ -1,4 +1,4 @@
-<table class="table">
+<table id="installments-table" class="table">
 	<tr>
 		<th>S.No</th>
 		<th>Amount</th>
@@ -12,13 +12,8 @@
 	<?php if (!empty($installments)): ?>
 		<?php 
 		$i = 1;
-		$paid_amount = 0;
-		$remaining_amount = 0;
 		$PaidAmount = [];
-		foreach ($installments as $oneunit): 
-			$remaining_amount = $remaining_amount + $oneunit->remaining;
-			$paid_amount = $paid_amount + $oneunit->paid;
-		?>
+		foreach ($installments as $oneunit): ?>
 		<tr <?php if($oneunit->status == 1){ echo 'style="background:#f9f9f9"'; } ?>>
 			<td><?php echo $i; ?></td>
 			<td><?php echo 'Rs: '.$oneunit->amount; ?></td>
@@ -126,8 +121,7 @@
 				</td>
 			</tr>
 		<?php $i++; endforeach ?>
-		<input type="hidden" value="<?php echo $paid_amount; ?>" id="paidamount">
-		<input type="hidden" value="<?php echo $remaining_amount; ?>" id="remaining_amount">
+		<input type="hidden" value="<?php echo $paid = array_sum($PaidAmount); ?>" id="paidamount">
 			<tr>
 				<th>Total Amount</th>
 				<th id="TotalAmountCalculated">Total Amount</th>
@@ -141,25 +135,30 @@
 <script>
 	
 	setTimeout(function(){
-		var paid = $('#paidamount').val();
-		var total = $('#TotalPayment').val();
+		var paid = parseFloat($('#paidamount').val());
+			paid = isNaN(paid) ? 0 : paid;
+		var total = parseFloat($('#TotalPayment').val());
 		var token = $('#tokenMoney').text();
 		var downpay = $('#Downpayment').text();
 		token = parseFloat(token.replace('Rs.',''));
 		downpay = parseFloat(downpay.replace('Rs.',''));
-		remaingAmount = $('#remaining_amount').val();
+		paidAmount = token+downpay+paid;
+		remaingAmount = total-paidAmount;
+		if (remaingAmount <= 0) {
+			$('#installments-table').remove();
+			$('#installments').prev().text('Full Payment').addClass('text-center');
+		}
 		$('#TotalAmountCalculated').text('Rs.'+total);
-		$('#PaidAmountCalculated').text((isNaN(paid)) ? 'Rs.'+0 : 'Rs.'+paid);
-		if (parseFloat(paid) > parseFloat(total)) 
+		$('#PaidAmountCalculated').text((isNaN(paidAmount)) ? 'Rs.'+0 : 'Rs.'+paidAmount);
+		if (paidAmount > total) 
 		{
 			$('#RemainingAmountCalculated').text('Rs.0');
 		}
 		else
 		{
-
 			$('#RemainingAmountCalculated').text((isNaN(remaingAmount) ? 'Rs.'+0 : 'Rs.'+remaingAmount));
 		}
-	},1000);
+	},10);
 	function ShowInstallment(id)
 	{
 		if (id=="Bank") 

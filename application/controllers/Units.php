@@ -91,10 +91,89 @@ class Units extends CI_Controller
 		$UploadFile = $this->Admin->InsertData('files',$planArray);
 
 	}
+	// load sales view for delete unit
+	function get_delete_sales() {
+		$this->load->view('units/delete_sales');
+	}
+	// Get sales for delete view
+	function get_sales_by_unit($id) {
+		$con['selection'] = '*,sales_units.size_sqft as totalarea,sale.created_at as recentdate,sales_units.unit_id';
+
+			$con['conditions'] = array(
+				'sale.unit_id' => $id
+			);
+
+		$con['returnType'] = 'object';
+		$con['innerJoin'] = array(array(
+            'table' => 'basic_floors',
+            'condition' =>'sale.floor_id = basic_floors.floor_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'sales_units',
+            'condition' =>'sales_units.unit_id = sale.unit_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'project',
+            'condition' =>'basic_floors.project_id = project.project_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'users',
+            'condition' =>'sale.user_id = users.user_id',
+            'joinType' => 'inner'
+        ));
+		
+		$searchResult = $this->Admin->getRows($con, 'sale');
+		$searchResult = $searchResult ? $searchResult : array();
+		$fetchAllAgents = array();
+		foreach ($searchResult as $each) {
+
+			// Finding Over Due Downpayments
+			$downpayemnt = '';
+			$soldDate    = date("Y-m-d",strtotime($each->sale_date."+2 days"));
+			$currentDate = date("Y-m-d");
+			if ($each->recieved_downpayment == 0 && $soldDate <= $currentDate) {
+				$downpayment = "<b class='text-danger'>Over Due</b>";
+			}
+			else
+			{
+				$downpayment = 'Rs.'.$each->down_payment;
+			}
+
+			$fetchAllAgents[] = array(
+				'11' 	=> date("d M Y",strtotime($each->recentdate)),
+				'0' 	=> $each->project_name,
+				'1' 	=> $each->project_location,
+				'2' 	=> $each->floor_types,
+				'3' 	=> $each->unit_type,
+				'4'	 	=> $each->fullname,
+				'6' 	=> $each->phone_login,
+				'7' 	=> $each->totalarea.' sqft',
+				'8' 	=> 'Rs: '.$each->totalarea*$each->pricesqft,
+				'12'	=> $downpayment
+			);
+		}
+		$output = array(
+			"data" => $fetchAllAgents
+		);
+
+		echo json_encode($output); 
+	}
 	// getting all Unitss
-	function getAllUnits()
+	function getAllUnits($action = 'all')
 	{
-		$AllUnitss = $this->Admin->DJoin('*,sales_units.unit_id,sales_units.price_sqft as shop_price_sqft,sales_units.size_sqft as size','sales_units','basic_floors',array('project' => 'project.project_id = basic_floors.project_id'),'sales_units.floor_id = basic_floors.floor_id');
+		if ($action == 'specific') {
+			$project_id = $this->input->post('project_id');
+			$floor_id = $this->input->post('floor_id');
+
+			$condition = array(
+				'project.project_id' => $project_id,
+				'sales_units.floor_id' => $floor_id
+			);
+			$AllUnitss = $this->Admin->DJoin('*,sales_units.unit_id,sales_units.price_sqft as shop_price_sqft,sales_units.size_sqft as size','sales_units','basic_floors',array('project' => 'project.project_id = basic_floors.project_id'),'sales_units.floor_id = basic_floors.floor_id', $condition);
+		} else {
+			$AllUnitss = $this->Admin->DJoin('*,sales_units.unit_id,sales_units.price_sqft as shop_price_sqft,sales_units.size_sqft as size','sales_units','basic_floors',array('project' => 'project.project_id = basic_floors.project_id'),'sales_units.floor_id = basic_floors.floor_id');
+		}
+		
 		$fetchAllUnitss = array();
 		$ActionButton = '';
 		foreach ($AllUnitss as $each) {
@@ -103,7 +182,7 @@ class Units extends CI_Controller
 			$Buttons = '<div class="btn-group">
 			<a href="'.base_url().'Units/addFiles/'.$each->unit_id.'" class="btn btn-danger btn-sm">Files</a>
 				<a href="'.base_url().'Units/unitdetails/'.$each->unit_id.'" class="btn btn-primary btn-sm"> See Details </a>
-				<button class="btn btn-success btn-sm" data-toggle="modal" data-target="#GetAlLData" onclick="doUnitsAction(2,'.$each->unit_id.')"> Edit </button>
+				<button class="btn btn-success btn-sm" data-toggle="modal" data-target="#GetAlLData" onclick="doUnitsAction(2,'.$each->unit_id.')"> Edit </button><a href="'.base_url().'Units/get_delete_sales/'.$each->unit_id.'" class="btn btn-danger btn-sm">Delete</a>
 				';
 			$Archecticural = '<a href="'.base_url().'Units/plans/'.$each->unit_id.'" class="btn btn-default">See Details</a>';
 		
@@ -124,6 +203,8 @@ class Units extends CI_Controller
         );
         echo json_encode($output);
 	}
+
+	
 
 	
 	// To Modify Units
@@ -159,6 +240,8 @@ class Units extends CI_Controller
 		$data = $_POST;
 		$update = $this->Admin->UpdateDB('sales_units',array('unit_id' => $id),$data);
 		if ($update) {
+			// update installment after shop unit change
+			$this->update_installments($data);
 			$response = array('success' => true, 'param' => 'success', 'message' => 'Sale Units Updated');
 			echo json_encode($response);
 		}
@@ -166,6 +249,51 @@ class Units extends CI_Controller
 		{
 			$response = array('success' => false, 'param' => 'danger', 'message' => 'Sale Units Updation  Failed');
 			echo json_encode($response);
+		}
+	}
+
+	// Update installments function start form here.
+	function update_installments($data) {
+		$con['conditions'] = array(
+			'unit_id' => $data['unit_id'],
+			'resale' => 0
+		);
+		$con['returnType'] = 'single';
+		$con['selection'] = 'sale.*';
+		$sale = $this->Admin->getRows($con, 'sale');
+		if ($sale) {
+			$con = array();
+			$con['conditions'] = array(
+				'sale_id' => $sale['sale_id'],
+				'received_by' => 0
+			);
+			$installments = $this->Admin->getRows($con, 'installments'); // Query for unpaid installments
+			$con = array();
+			$con['selection'] = 'sum(installments.paid) as paid_installment';
+			$con['conditions'] = array(
+				'sale_id' => $sale['sale_id'],
+				'received_by' => 1
+			);
+			$con['returnType'] = 'single';
+			$paid_installment = $this->Admin->getRows($con, 'installments'); // Query for paid installments
+			$paid_installment = $paid_installment ? $paid_installment['paid_installment'] : 0;
+			
+			if ($installments) {
+				foreach ($installments as $installment) {
+					$paid_amount = $sale['token_money'] + $sale['down_payment'];
+					$new_amount = $data['size_sqft'] * $sale['pricesqft'] - $sale['discount'];
+					$new_amount = $new_amount - $paid_amount;
+					$new_amount = $new_amount - $paid_installment;
+					$new_amount = $new_amount / $sale['installments'];
+					$installment_data = array(
+						'amount' => $new_amount,
+						'remaining' => $new_amount
+					);
+					$this->Admin->UpdateDB('installments',array('installment_id' => $installment['installment_id']),$installment_data);
+
+				}
+			}
+		
 		}
 	}
 
@@ -348,6 +476,17 @@ class Units extends CI_Controller
 			$id  .= $pre.$post; 
 		}
 		echo trim($id);
+	}
+
+	function delete() {
+		$unit_id = $this->input->post('unit_id');
+		$condition = array(
+			'unit_id' => $unit_id
+		);
+		$this->Admin->DeleteDB('sales_units', $condition);
+		$response = array('success' => true, 'param' => 'success','unit_id' => $unit_id, 'message' => 'Shop and related sales deleted successfully.');
+		$this->output->set_content_type('application/json')
+            ->set_output(json_encode($response));
 	}
 
 }

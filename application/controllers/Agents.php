@@ -223,6 +223,8 @@ class Agents extends CI_Controller
 		$id = $this->input->post('user_id');
 		$data = $_POST;
 		$update = $this->Admin->UpdateDB('users',array('user_id' => $id),$data);
+		$response = array('success' => true, 'param' => 'success', 'message' => 'Record updated successfully.');
+		$this->output->set_content_type('application/json')->set_output(json_encode($response));
 	}
 
 	// To View Agent

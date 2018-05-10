@@ -31,6 +31,27 @@ td, th {
             <div class="page-content-wrap">                
 
                 <div class="row">
+                    <div class="col-lg-12">
+                         <form id="unit_filter_form">
+                                    <div class="col-md-3">
+                                        <label for="#">Project</label>
+                                         <select class="form-control " onchange="getsearchFloors($(this).val())" tabindex="1" name="project" id="project_type">
+                                                <option>Select Project</option>
+                                                    <?php $project = json_decode($project); if (!empty($project)): ?>
+                                                    <?php foreach ($project as $pro): ?>
+                                                        <option value="<?php echo $pro->project_id;?>"><?php echo $pro->project_name; ?></option>
+                                                    <?php endforeach ?>
+                                                <?php endif ?>  
+                                        </select>
+                                    </div>
+                                   <div id="getSearchfloors"></div>
+                                
+                                    <div class="col-md-2">
+                                        <label for=""></label>
+                                        <input style="margin-top: 20px;" type="submit" class="btn btn-info" value="Filter">
+                                    </div>
+                                </form>
+                    </div>
                     <div class="col-md-12 mar-2">
                         <div id="loadData"></div>
                         
@@ -107,8 +128,7 @@ td, th {
                                     <option> Select Project </option>
                                     <?php  
                                     if (!empty($project)) {
-                                        $decodeUnit = json_decode($project);
-                                        foreach ($decodeUnit as $singleUnit) {
+                                        foreach ($project as $singleUnit) {
                                             echo '<option value="'.$singleUnit->project_id.'">'.$singleUnit->project_name.'</option>';
                                         }
                                     }
@@ -276,6 +296,40 @@ function doUnitsAction(action,id)
 function Reset() {
     $('#loadData').html('');
 }
+
+function getsearchFloors(id)
+    {
+        $.post('<?php echo base_url('Cif/getsearchFloors') ?>', {id:id}, function(data, textStatus, xhr) {
+            $('#getSearchfloors').html(data);
+        });
+    }
+    $( "body" ).delegate( "#unit_filter_form", "submit", function(e) {
+        var project_id = $("select[name='project']").val();
+        var floor_id = $("select[name='floor']").val();
+        e.preventDefault();
+        var data = {project_id: project_id, floor_id: floor_id};
+        $("#example").dataTable().fnDestroy();
+        $('#example').DataTable({
+            "order": [[ 0, "ASC" ]],
+            "ajax": {
+                'url': "<?php echo base_url('Units/getAllUnits/specific') ?>",
+                'type': 'POST',
+                'data': data
+            },
+            "columns": [
+            { "data": "11" },
+            { "data": "0" },
+            { "data": "1" },
+            { "data": "2" },
+            { "data": "7" },
+            { "data": "3" },
+            { "data": "4" },
+            { "data": "5" },
+            { "data": "9" }
+            ]
+        });
+    });
+
 </script>
 </body>
 </html>

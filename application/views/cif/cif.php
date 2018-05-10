@@ -815,6 +815,23 @@ function convertCanvasToImage(canvas) {
 	image.src = canvas.toDataURL("image/png");
 	return image;
 }
+
+function delete_user(user_id, units) {
+	if (units > 0) {
+		alert('This user purchased units can not be deleted');
+	} else if (confirm("Are you sure to delete this record")) {
+			$.ajax({
+                url: '<?php echo base_url("Cif/delete_user")?>',
+                type: 'POST',
+                data: {user_id:user_id},
+            })
+            .done(function(res) {
+                $("#example").dataTable().fnDestroy();
+                loadDataintoTable();
+                noty({text: res.message, layout: 'topRight', type: res.param});
+            })
+	}
+}
 // Get access to the camera!
 if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     // Not adding `{ audio: true }` since we only want video now

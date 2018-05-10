@@ -166,8 +166,8 @@ $(document).ready(function (e) {
         {
             resetTable();
             $('#loadDatas').modal('toggle');
-            response = $.parseJSON(res);
-            noty({text: response.message, layout: 'topRight', type: response.param});
+            noty({text: res.message, layout: 'topRight', type: res.param});
+          
         }
     });
   }));

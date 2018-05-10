@@ -97,7 +97,6 @@ $(document).ready(function (e) {
         success: function(res)  
         {
             $('#loadData').html('');
-            resetTable();
             response = $.parseJSON(res);
             noty({text: response.message, layout: 'topRight', type: response.param});
         }

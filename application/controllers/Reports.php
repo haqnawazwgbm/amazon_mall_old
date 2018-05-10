@@ -11,7 +11,6 @@ class Reports extends CI_Controller
 	{
 		parent::__construct();
 		$this->load->library('Ppdf');
-		$this->load->library('Xls');
 	}
 	
 	/**
@@ -32,15 +31,7 @@ class Reports extends CI_Controller
 		$From = $this->input->post('from');
 		$To = $this->input->post('to');
 
-		// Data For Filteration
-		$FilterData = array(
-								'C.project_id' => $Project,
-								'A.floor_id' => $Floor,
-								'A.sale_date >' => $From, 
-								'A.sale_date <' => $To,
-								'A.recieved_downpayment' => 1,
-								'D.sold' => 1,
-							);
+
 		// Checking if its Sale Agent
 		$sessionType = $this->session->userdata('user_type');
 
@@ -50,30 +41,74 @@ class Reports extends CI_Controller
 		endif;
 
 		if ($Project !="Select Project" && $Floor!="Select Floor" && !empty($From) && !empty($To)):
-			$SaleAdmin = $this->Admin->DJoin(
-							'A.sale_id,A.pricesqft,A.sale_date,C.project_name,C.project_location,D.unit_type,B.floor_types,D.size_sqft',
+			
+	/*		$SaleAdmin = $this->Admin->DJoin(
+							'A.sale_id,A.pricesqft,A.sale_date,C.project_name,C.project_location,D.unit_type,B.floor_types,D.size_sqft, U.fullname',
 							'sale as A',
 							'basic_floors as B',
 							array(
 								'project as C' => 'C.project_id = B.project_id',
-								'sales_units as D' => 'D.unit_id = A.unit_id'
+								'sales_units as D' => 'D.unit_id = A.unit_id',
+								'users as U' => 'U.user_id = A.user_id' 
 							),
 							'A.floor_id = B.floor_id',
 							$FilterData,
 							'A.sale_date ASC'
 						);
-			$data['Report'] = $SaleAdmin;
+			$data['Report'] = $SaleAdmin;*/
 			$data['filterData'] = array(
-				'project' => $Project,
-				'floor' => $Floor,
-				'from' => $From,
-				'to' => $To
+				'C.project_id' => $Project,
+				'A.floor_id' => $Floor,
+				'A.sale_date >' => $From, 
+				'A.sale_date <' => $To,
+				'A.recieved_downpayment' => 1,
+				'B.sold' => 1,
 			);
-			$this->load->view('reports/sale',$data);
+			$con['conditions'] = array(
+				'project.project_id' => $Project
+			);
+			$con['returnType'] = 'object';
+			$data['project'] = $this->Admin->getRows($con, 'project');
+			$this->load->view('reports/saleallreport',$data);
+		elseif ($Project != "Select Project" && $Floor=="Select Floor" && empty($From) && empty($To)) :
+			$data['filterData'] = array(
+				'C.project_id' => $Project,
+				'A.recieved_downpayment' => 1,
+				'B.sold' => 1,
+			);
+			$con['conditions'] = array(
+				'project.project_id' => $Project
+			);
+			$con['returnType'] = 'object';
+			$data['project'] = $this->Admin->getRows($con, 'project');
+			$this->load->view('reports/saleallreport',$data);
+		elseif ($Project != "Select Project" && $Floor!="Select Floor" && empty($From) && empty($To)) :
+			$data['filterData'] = array(
+				'C.project_id' => $Project,
+				'C.floor_id' => $Floor,
+				'A.recieved_downpayment' => 1,
+				'B.sold' => 1,
+			);
+			$con['conditions'] = array(
+				'project.project_id' => $Project
+			);
+			$con['returnType'] = 'object';
+			$data['project'] = $this->Admin->getRows($con, 'project');
+			$this->load->view('reports/saleallreport',$data);
 		elseif(!empty($From) && !empty($To)):
+			$data['filterData'] = array(
+				'A.sale_date >' => $From, 
+				'A.sale_date <' => $To,
+				'A.recieved_downpayment' => 1,
+				'B.sold' => 1,
+			);
 			$data['project'] = $this->Admin->getAllData('project');
 			$this->load->view('reports/saleallreport',$data);
 		else:
+			$data['filterData'] = array(
+				'A.recieved_downpayment' => 1,
+				'B.sold' => 1,
+			);
 			$data['project'] = $this->Admin->getAllData('project');
 			$this->load->view('reports/saleallreport',$data);
 		endif;
@@ -700,10 +735,9 @@ class Reports extends CI_Controller
 						$total_rent = $total_rent + $rent;
 					
 					endforeach; */
-					
 					$sheet->setCellValue('A1', 'Hello World !');
 					$writer = $this->xls->excel;
-					$result = $writer->save($filename);
+					$writer->save($filename);
 
 		        } else {
 		        	$filename = time()."_order.pdf";

@@ -64,6 +64,9 @@
     <?php $this->load->view('./incs/jquery-footer') ?>  
     <script type="text/javascript" src="<?php echo base_url()?>assets/js/plugins/datatables/jquery.dataTables.min.js"></script>    
     <script type="text/javascript" src="<?php echo base_url()?>assets/js/plugins/bootstrap/bootstrap-select.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.12.12/xlsx.core.min.js"></script>
+    <script src="https://fastcdn.org/FileSaver.js/1.1.20151003/FileSaver.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/TableExport/5.0.0/js/tableexport.min.js"></script>
     <script>
         $(document).ready(function (e) {
             $("#Report").on('submit',(function(e) {
@@ -78,9 +81,14 @@
                 success: function(res)  
                 {
                     $('#resultReports').html(res);
+                    var tables = $("table").tableExport({
+                         formats: ["xls"]
+                    });
+                    $('table').tableExport().remove();
                 }
             });
           }));
+
         });
     </script>
 </body>

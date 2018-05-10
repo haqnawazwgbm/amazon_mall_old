@@ -211,6 +211,7 @@ class Cif extends CI_Controller
 			$Buttons .= '<a onclick="editCustomer('.$each->user_id.')" class="btn btn-xs btn-primary"><i class="fa fa-pencil"></i></a>
 			<a href="'.base_url().'Cif/userDetails/'.$each->user_id.'" class="btn btn-xs btn-success">See Details</a>
 						<a onclick="SaleUnit('.$each->user_id.')" class="btn btn-xs btn-danger">Add Sale Unit</a>
+						<a onclick="delete_user('.$each->user_id.','.$Purchase.')" class="btn btn-xs btn-danger">Delete</a>
 						</div>';
 			
 			$fetchAllUsers[] = array(
@@ -814,7 +815,7 @@ class Cif extends CI_Controller
 		<div class="col-md-4">
 			<div class="form-group">                                        
 				<label class="control-label">Floor</label>
-				<select class="form-control select" data-live-search="true" tabindex="1" id="floor_type" onchange="SearchUnits($(this).val())">
+				<select name="floor" class="form-control select" data-live-search="true" tabindex="1" id="floor_type" onchange="SearchUnits($(this).val())">
 					<option>Select Floor</option>
 					<?php if (!empty($floors)): ?>
 						<?php foreach ($floors as $floor_unit): ?>
@@ -869,6 +870,17 @@ class Cif extends CI_Controller
  		echo '<img src="'.base_url().$filepath.'" width="100%"><input type="hidden" value="'.$id.'" id="reassignid">';
  	}
 
+ 	function delete_user() {
+ 		$user_id = $this->input->post('user_id');
+ 		$condition = array(
+			'user_id' => $user_id
+		);
+		
+		$this->Admin->DeleteDB('users', $condition);
+		$response = array('success' => true, 'param' => 'success','user_id' => $user_id, 'message' => 'Record deleted successfully.');
+		$this->output->set_content_type('application/json')
+            ->set_output(json_encode($response));
+ 	}
 
 }
 ?>		
