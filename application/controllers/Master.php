@@ -238,11 +238,11 @@ class Master extends CI_Controller
 						'D.project_id' =>$data->project_id,
 					)
 				);
-
 			$TotalAmount = [];
 
 			foreach ($purchases as $one) {
 				$getInstallments = $this->Admin->getAllData('installments','paid',array('status' => 0,'willberecievedon <=' => date("Y-m-d"),'sale_id' => $one->sale_id));
+
 				if (!empty($getInstallments)) {
 					foreach ($getInstallments as $insta) {
 						$TotalAmount[] = $insta->paid;

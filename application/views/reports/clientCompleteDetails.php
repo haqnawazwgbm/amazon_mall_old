@@ -140,11 +140,11 @@ if (!empty($purchases)):
 				<td><?php 
 				echo 'Rs.'.$single->discount;
 				?></td>
-				<th>Price Per Square Feet After Discount</th>
+				<!-- <th>Price Per Square Feet After Discount</th>
 				<td><?php 
-				$discounted = $single->pricesqft-$single->discount; 
-				echo 'Rs.'.$discounted; 
-				?></td>
+				$discounted = $single->square * $single->pricesqft - $single->discount; 
+				echo 'Rs.'.$single->pricesqft/$discounted; 
+				?></td> -->
 			</tr>
 		</table>
 		<br>
@@ -161,7 +161,7 @@ if (!empty($purchases)):
 			<tr>
 				<th>Unit Price After Discount</th>
 				<td><?php 
-				$totalPriceDiscount = $single->square*$discounted;
+				$totalPriceDiscount = $single->pricesqft * $single->square - $single->discount;
 				echo '<b>Rs.'.$totalPriceDiscount.'</b>';
 				?></td>
 			</tr>

@@ -67,8 +67,10 @@ td, th {
                                                 <textarea class="form-control" name="note" required cols="30" rows="5"></textarea>
                                             </div>
                                             <div class="form-group">
+                                                <label for="">Price/sqft</label>
+                                                <input type="number" value="" id="price_sqft" class="form-control" name="price_sqft" required>
                                                 <label for="">Amount</label>
-                                                <input type="text" value="" class="form-control" name="token_money" required>
+                                                <input type="text" readonly value="" id="amount" class="form-control" name="token_money" required>
                                                 <br>
                                                 <input type="submit" class="btn btn-primary" value="Pay Amount">
                                                 <input type="button" id="cancelTakeBack" class="btn btn-primary cancel" value="Cancel">
@@ -117,7 +119,8 @@ td, th {
         </div>            
         <!-- END PAGE CONTENT -->
     </div>
-
+   <div id="load_sale_form"></div>
+   <div id="load_installment_form"></div>
     <?php $this->load->view('./incs/jquery-footer') ?>  
     <script type="text/javascript" src="<?php echo base_url()?>assets/js/plugins/datatables/jquery.dataTables.min.js"></script>    
     <script>
@@ -198,6 +201,7 @@ function ShowTakenback(saleid,userid)
     $('#forTackback').show();
     $.post('<?php echo base_url('Sales/TackBackRe') ?>', {sale:saleid,user:userid}, function(data, textStatus, xhr) {
         $('#TakeBackReport').html(data);
+        $("#TakeBAckMoney")[0].reset();
     });
 }
 
@@ -212,9 +216,8 @@ function deleteSale(sale_id, unit_id) {
             noty({text: response.message, layout: 'topRight', type: response.param});
         });
     }
-
-    
 }
+
  function confirm_hold_sale(unit_id) {
        if(confirm('Are you sure to confirm this record?')) {
          $.post('<?php echo base_url('Sales/update_unit') ?>', {unit_id:unit_id,sold:1}, function(response, textStatus, xhr) {
@@ -232,7 +235,22 @@ function approve_sale(sale_id) {
         });
     }
 }
-
+function editSale(sale_id) {
+              $.ajax({
+                    url: '<?php echo base_url("Sales/show_edit_sale")?>',
+                    type: 'POST',
+                    data: {sale_id:sale_id},
+                })
+                .done(function(res) {
+                    if (res == false) {
+                        alert('One or more installments can not be editable');
+                    } else {
+                        $('#load_sale_form').html(res);
+                        $('#exampleModal').modal('show');
+                    }
+                    
+                })
+        }
 </script>
 </body>
 </html>

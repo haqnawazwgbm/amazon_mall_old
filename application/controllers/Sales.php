@@ -4,7 +4,7 @@
 *. Sales Controller 
 */
 
-class Sales extends CI_Controller
+class Sales extends General_Functions
 {
 	
 	function __construct()
@@ -99,7 +99,7 @@ class Sales extends CI_Controller
             'condition' =>'sale.user_id = users.user_id',
             'joinType' => 'inner'
         ));
-		
+
 		$searchResult = $this->Admin->getRows($con, 'sale');
 		$searchResult = $searchResult ? $searchResult : array();
 		$fetchAllAgents = array();
@@ -126,6 +126,7 @@ class Sales extends CI_Controller
 				    <li><a href="'.base_url().'Sales/installmentPlan/'.$each->sale_id.'">Payments</a></li>
 				    <li><a onclick="ShowTakenback('.$each->sale_id.','.$each->user_id.')">Take Back</a></li>
 				    <li><a  onclick="showTransfereFrom('.$each->sale_id.','.$each->user_id.',' . $each->totalarea .')">Resell</a></li>
+				    <li><a onclick="editSale('.$each->sale_id.')">Edit</a></li>
 				    <li><a onclick="deleteSale('.$each->sale_id.','.$each->unit_id.')">Delete</a></li>
 				  </ul>
 				</div>';
@@ -757,7 +758,7 @@ function TackBackPayment()
 	if ($saveLog) {
 		
 		$saleids = $this->Admin->getAllData('sale','unit_id',array('sale_id' => $saleid));
-		$SaleDocs = $this->Admin->DeleteDB('sale',array('sale_id' => $saleid));
+		$SaleDocs = $this->Admin->UpdateDB('sale',array('sale_id' => $saleid), array('resale' => 1));
 		$SaleDocs = $this->Admin->DeleteDB('sale_documents',array('sale_id' => $saleid));
 		$SaleInst = $this->Admin->DeleteDB('installments',array('sale_id' => $saleid));
 		$PayMetho = $this->Admin->DeleteDB('payment_methods',array('column_id' => $saleid));
@@ -792,29 +793,70 @@ function TackBackPayment()
 			);
 			$this->Admin->InsertData('payment_methods',$Method);
 		}
-		$response = array('success' => true, 'param' => 'success', 'message' => 'User Added Successfully');
+		$response = array('success' => true, 'param' => 'success', 'message' => 'Buy back Successfully');
 		echo json_encode($response);
 	}
 	else
 	{
-		$response = array('success' => true, 'param' => 'danger', 'message' => 'User Added Successfully');
+		$response = array('success' => true, 'param' => 'danger', 'message' => 'Something went wrong. Please try again.');
 		echo json_encode($response);
 	}
 
 }
 
-function TackBackRe()
+function TackBackRe($type = '')
 {
 	$user = $_POST['user'];
 	$sale = $_POST['sale'];
 
-	$selectFields 	= '*';
+	/*$selectFields 	= '*';
 	$firstTable 	= 'sale';
 	$where = array('sale.sale_id' => $sale, 'sale.user_id' => $user);
-	$sales = $this->Admin->DJoin($selectFields,$firstTable,'users','','sale.user_id = users.user_id',$where);
-	
-	//$sales = $this->Admin->getAllData('sale','recieved_downpayment,recieved_token,total_payment,token_money,down_payment',array('sale_id' => $sale,'user_id' => $user));
-	$inst = $this->Admin->getAllData('installments','paid',array('sale_id' => $sale,'status' =>'1'));
+	$sales = $this->Admin->DJoin($selectFields,$firstTable,'users','','sale.user_id = users.user_id',$where);*/
+
+	$con['selection'] = "sale.*, sales_units.price_sqft as unit_price, sales_units.size_sqft as unit_size, basic_floors.price_sqft as price_sqft, users.*, project.project_name, basic_floors.floor_types, sales_units.unit_type";
+	$con['conditions'] = array(
+		'sale.sale_id' => $sale,
+		'sale.user_id' => $user
+	);
+	$con['returnType'] = 'object';
+		$con['innerJoin'] = array(array(
+            'table' => 'basic_floors',
+            'condition' =>'sale.floor_id = basic_floors.floor_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'sales_units',
+            'condition' =>'sales_units.unit_id = sale.unit_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'users',
+            'condition' =>'sale.user_id = users.user_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'project',
+            'condition' =>'basic_floors.project_id = project.project_id',
+            'joinType' => 'inner'
+        ));
+    $sales = $this->Admin->getRows($con, 'sale');
+
+    $date = new DateTime($sales[0]->sale_date);
+    $now = new DateTime();
+    $diff=date_diff($date, $now);
+    $sales[0]->sale_days = $diff->format("%d days, %m months and %y years");
+
+   	if ($sales[0]->unit_price == '') {
+   		$sales[0]->unit_price = $sales[0]->price_sqft;
+   	} else {
+   		$sales[0]->unit_price = $sales[0]->unit_price;
+   	} 
+   	if ($sales[0]->square_feet == 0) {
+   		$sales[0]->unit_size = $sales[0]->unit_size;
+   	} else {
+   		$sales[0]->unit_size = $sales[0]->square_feet;
+   	}
+
+
+	$inst = $this->Admin->getAllData('installments','*',array('sale_id' => $sale));
 	$Data = [];
 	$tol = $sales[0];
 	$Data['Total'] = $tol->total_payment;
@@ -827,20 +869,71 @@ function TackBackRe()
 	}
 	if (!empty($inst)) {
 		foreach ($inst as $one) {
-			$paid[] = $one->paid;
+			if ($one->status == 1) {
+				$paid[] = $one->paid;
+			} else {
+				$paid[] = 0;
+			}
+			if ($one->willberecievedon <= date('Y-m-d') && $one->received_by == 0) {
+				$Data['payment_title'] = 'Over due';
+			}
 		}
 	}
 	$sum = array_sum($paid);
 	$Data['Paid'] = $sum;
 	$Data['sale'] = $sales;
 	$Data['insta'] = $inst;
-	$this->load->view('sales/takeback',$Data);
+
+	if ($Data['Total'] - $Data['Paid'] <= 0) {
+		$Data['payment_title'] = 'Full payment';
+	} elseif (!isset($Data['payment_title'])) {
+		if ($Data['Total'] - $Data['Paid'] > 0) {
+			$Data['payment_title'] = 'Incomplete payment';
+		}
+	}
+	if ($type == 'transfer') {
+		$this->load->view('sales/transfer_form',$Data);
+	} else {
+		$this->load->view('sales/takeback',$Data);
+	}
+	
 }
 
 function TackBacks()
 {
-	$data['tackback'] = $this->Admin->DJoin('*','takeback','logs','','takeback.id=logs.column_id');
-	$this->load->view('sales/takebacks',$data);
+	$con['selection'] = '*,sales_units.size_sqft as totalarea,sale.created_at as recentdate,sales_units.unit_id, takeback.amount, takeback.created_at';
+
+	
+		$con['conditions'] = array(
+			'sale.resale' => 1
+		);
+		
+		$con['innerJoin'] = array(array(
+            'table' => 'sale',
+            'condition' =>'takeback.sale_id = sale.sale_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'basic_floors',
+            'condition' =>'sale.floor_id = basic_floors.floor_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'sales_units',
+            'condition' =>'sales_units.unit_id = sale.unit_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'project',
+            'condition' =>'basic_floors.project_id = project.project_id',
+            'joinType' => 'inner'
+        ),array(
+            'table' => 'users',
+            'condition' =>'sale.user_id = users.user_id',
+            'joinType' => 'inner'
+        ));
+        $con['orderBy'] = 'takeback.id desc';
+
+		$sales = $this->Admin->getRows($con, 'takeback');
+		$data['takebacks'] = $sales ? $sales : array();
+		$this->load->view('sales/takebacks',$data);
 }
 
 function getalerts()
@@ -1038,5 +1131,239 @@ public function resale() {
 		$this->output->set_content_type('application/json')
             ->set_output(json_encode($response));
 	}
+	function show_edit_sale() {
+		
+		$sale_id = $this->input->post('sale_id');
+		$con['conditions'] = array(
+			'sale_id' => $sale_id
+		);
+		$con['returnType'] = 'single';
+		$data['sale'] = $this->Admin->getRows($con, 'sale');
 
-}?>
+		$con = array();
+		$data['projects'] = $this->Admin->getRows($con, 'project');
+		
+		$con = array();
+		$con['conditions'] = array(
+			'project_id' => $data['sale']['project_id']
+		);
+		$data['floors'] = $this->Admin->getRows($con, 'basic_floors');
+
+		$con['conditions'] = array(
+			'floor_id' => $data['sale']['floor_id']
+		);
+		$data['units'] = $this->Admin->getRows($con, 'sales_units');
+
+		$con['conditions'] = array();
+		$data['users'] = $this->Admin->getRows($con, 'users');
+
+		$con = array();
+		$con['conditions'] = array(
+			'sale_id' => $sale_id,
+			'received_by' => 1
+		);
+		$installments = $this->Admin->getRows($con, 'installments');
+		if (! $installments) {
+			$view = $this->load->view('sales/edit_sale', $data, true);
+			$this->output->set_content_type('application/html')
+            ->set_output($view);
+		} else {
+			exit(false);
+		}
+
+		
+	}	
+
+	// Installments
+ 	function show_edit_installments()
+ 	{
+ 		$con['conditions'] = array(
+ 			'unit_id' => $this->input->post('unit_id')
+ 		);
+ 		$con['returnType'] = 'single';
+ 		$unit = $this->Admin->getRows($con, 'sales_units');
+
+ 		$con['conditions'] = array(
+ 			'floor_id' => $this->input->post('floor_id')
+ 		);
+ 		$floor = $this->Admin->getRows($con, 'basic_floors');
+
+ 		$totalPayment = $this->input->post('totalPayment');
+ 		$tokenMoney   = $this->input->post('token_money');
+ 		$downPayment  = $this->input->post('down_payment');
+ 		$totalYears   = $this->input->post('installments');
+ 		$discount     = $this->input->post('discount');
+ 		$price   	  = $floor['price_sqft'];
+ 		$size   	  = $unit['size_sqft'];
+ 		$square_feet   	  = 0;
+
+ 		$TotalPayment = '';
+ 		if (!empty($discount)) {
+ 			$prices = $price;
+ 			if ($square_feet == 0) {
+ 				$totalprice = $prices * $size - $discount;
+ 			} else {
+ 				$totalprice = $prices * $square_feet - $discount;
+ 			}
+ 			
+ 			$TotalPayment = $totalprice;
+ 		}
+ 		else
+ 		{
+ 			$TotalPayment = $totalPayment;
+ 		}
+ 		$allInstallments = [];
+ 		$getFinalAmount = '';
+ 		if (!empty($totalYears)) {
+ 			// Getting Months
+ 			// Getting  installments for Each Month
+			$totalToPay 	= ((float)$downPayment+(float)$tokenMoney);
+			$amountToBePaid = ((float)$TotalPayment-(float)$totalToPay); 
+			$getFinalAmount = $amountToBePaid / $totalYears;
+ 			// Making Array Of Installments
+ 			for ($i=0; $i < $totalYears ; $i++) { 
+ 				$allInstallments[] = array(
+ 					'date' => date("F|Y",strtotime('+'.$i.' month')),
+ 					'Installment' => round($getFinalAmount)
+ 				);		
+ 			}
+ 			$view = $this->load->view('cif/edit_installments',array('installments' => $allInstallments,'price' => $price, 'size' => $size), true);
+ 			$this->output->set_content_type('application/html')
+            ->set_output($view);
+ 		}
+ 		else
+ 		{
+ 			echo "Please Fill The Fields";
+ 		}
+ 	}
+
+ 	function update_installments()
+ 	{
+ 		$sale_id = $this->input->post('sale_id');
+ 		$tokenMoney   = $this->input->post('token_money');
+ 		$downPayment  = $this->input->post('down_payment');
+ 		$totalYears   = $this->input->post('installments');
+ 		$unitid   	  = $this->input->post('unit_id');
+ 		$project_id      = $this->input->post('project_id');
+ 		$floorid      = $this->input->post('floor_id');
+ 		$clientid     = $this->input->post('user_id');
+ 		$discount     = $this->input->post('discount');
+ 		$pricepersqft = $this->input->post('price_sqft');
+ 		$sizeSqft     = $this->input->post('size_sqft');
+ 		$square_feet     = $this->input->post('square_feet');
+ 		$TotalMoney   = '';
+ 		$Discount 	  = '';
+ 		// Updating Prices With Discounts if Any 
+ 		if (!empty($discount)) {
+ 			if ($square_feet == 0) {
+ 				$totalMoneyAfter = $sizeSqft * $pricepersqft - $discount;
+ 			} else {
+ 				$totalMoneyAfter = $square_feet * $pricepersqft - $discount;
+ 			}
+ 			
+ 			$TotalMoney = $totalMoneyAfter;
+ 			$Discount = $discount;
+ 		}
+ 		else
+ 		{
+ 			$TotalMoney = $square_feet * $pricepersqft;
+ 			$Discount   = 0; 
+ 		}
+ 		// $downPayments = $TotalMoney*25/100;
+ 		$saleArray	  = array(
+
+ 			'total_payment' => $TotalMoney,
+ 			'token_money' => $tokenMoney,
+ 			'down_payment' => $downPayment,
+ 			'installments' => $totalYears,
+ 			'discount' => $Discount,
+ 			'pricesqft' => $pricepersqft,
+ 			'square_feet' => $square_feet
+ 		);
+ 		print_r($saleArray); exit;
+ 		// Uploading Sale Unit Sold
+ 		$sold = $this->Admin->UpdateDB('sale',array('sale_id' => $sale_id), $saleArray);
+ 		
+ 		
+ 		//  Now Uploading Installments for User
+ 		$getFinalAmount = '';
+ 		if (!empty($totalYears)) {
+			$totalToPay 	= ((float)$downPayment+(float)$tokenMoney);
+			$amountToBePaid = ((float)$TotalMoney-(float)$totalToPay); 
+			$getFinalAmount = $amountToBePaid / $totalYears;
+
+			$con['conditions'] = array(
+				'sale_id' => $sale_id
+			);
+
+			$installments = $this->Admin->getRows($con, 'installments');
+
+ 			// Making Array Of Installments
+ 			for ($i=0; $i < $totalYears ; $i++) {
+ 				$incs = 90 * $i+1; 
+ 				$incs = date("Y-m-d",strtotime("+$incs days"));
+ 				$allInstallments = array(
+ 					'amount' => round($getFinalAmount),
+ 					'remaining' => round($getFinalAmount),
+ 					'paid' => 0,
+ 					'sale_id' => $sale_id
+ 				);		
+ 				$addInstallments = $this->Admin->UpdateDB('installments',array('installment_id' => $installments[$i]['installment_id']), $allInstallments);
+ 			}
+ 		}
+		if ($addInstallments) {
+			$response = array('success' => true, 'param' => 'success','soldid' => $sale_id, 'message' => 'Sale unit updated successfully');
+			$this->output->set_content_type('application/json')->set_output(json_encode($response));
+		}
+		else
+		{
+			$response = array('success' => false, 'param' => 'danger', 'message' => 'Sale Unite Updated Failed');
+			$this->output->set_content_type('application/json')->set_output(json_encode($response));
+		}
+ 	}
+
+ /*	function get_floor_dropdown() {
+ 		$project_id = $this->input->post('project_id');
+
+ 		$con['conditions'] = array(
+ 			'project_id' => $project_id
+ 		);
+ 		$floors = $this->Admin->getRows($con, 'basic_floors');
+
+ 		$string = '<select required class="form-control" id="floor_id" name="floor_id" onchange="get_units($(this).val())">
+ 					option> Select Floor </option>';
+ 		if ($floors) {
+ 			foreach ($floors as $floor) : 
+ 				$string = $string.'<option value="'.$floor['floor_id'].'">'.$floor['floor_types'].'</option>';
+ 			endforeach;
+ 		}
+ 		
+ 		$string = $string.'</select>';
+
+ 		$this->output->set_content_type('application/html')->set_output($string);
+ 	}
+
+ 	function get_unit_dropdown() {
+ 		$floor_id = $this->input->post('floor_id');
+
+ 		$con['conditions'] = array(
+ 			'floor_id' => $floor_id,
+ 			'sold' => 0
+ 		);
+ 		$units = $this->Admin->getRows($con, 'sales_units');
+
+ 		$string = '<select required class="form-control" id="unit_id" name="unit_id">
+ 					option> Select Floor </option>';
+ 		if ($units) {
+ 			foreach ($units as $unit) : 
+ 				$string = $string.'<option value="'.$unit['unit_id'].'">'.$unit['unit_type'].'</option>';
+ 			endforeach;
+ 		}
+ 		
+ 		$string = $string.'</select>';
+
+ 		$this->output->set_content_type('application/html')->set_output($string);
+ 	}*/
+
+}
+?>

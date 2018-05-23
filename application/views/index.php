@@ -119,7 +119,7 @@
                             <div class="panel panel-default">
                                 <div class="panel-heading">
                                     <div class="panel-title-box">
-                                        <h3>Total Sales</h3>
+                                        <h3>Total Sales Booked</h3>
                                     </div>                                    
                                     <ul class="panel-controls" style="margin-top: 2px;">
                                         <li><a href="#" class="panel-fullscreen"><span class="fa fa-expand"></span></a></li>

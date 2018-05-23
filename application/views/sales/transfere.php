@@ -35,7 +35,7 @@
         $('#from_user_id').val(userid);
         $('#forTackback').hide();
         $('#transfereForm').show();
-        $.post('<?php echo base_url('Sales/TackBackRe') ?>', {sale:saleid,user:userid}, function(data, textStatus, xhr) {
+        $.post('<?php echo base_url('Sales/TackBackRe/transfer') ?>', {sale:saleid,user:userid}, function(data, textStatus, xhr) {
             $('#resellReport').html(data);
         });
         // Get all users
