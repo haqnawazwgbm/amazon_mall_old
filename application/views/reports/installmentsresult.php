@@ -17,7 +17,8 @@
 			array(
 				'F.status' => 0,
 				'F.willberecievedon <=' => $currentDate,
-				'C.project_id' => $one->project_id
+				'C.project_id' => $one->project_id,
+				'E.type' => 'User'
 			)
 		);
 	?>

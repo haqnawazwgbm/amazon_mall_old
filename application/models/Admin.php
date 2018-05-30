@@ -55,6 +55,11 @@ class Admin extends CI_Model
                 $this->db->like($key, $value);
             }
         }
+        // Multiple where conditions
+        if(array_key_exists("string_conditions",$params)){
+            $this->db->where($params['string_conditions']);
+        }
+
         //fetch data by conditions
         if(array_key_exists("conditions",$params)){
            

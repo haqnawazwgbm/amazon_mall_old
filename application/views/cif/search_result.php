@@ -31,7 +31,7 @@
 					?></td>
 					<td>
 						<?php if ($value->sold != 1): ?>
-						<a onclick="selectUnit(<?php echo $value->unit_id; ?>,<?php echo $value->floor_id; ?>,<?php echo $value->shop_price_sqft == '' ? $value->size_sqft * $value->price_sqft : $value->size_sqft * $value->shop_price_sqft; ?>,<?php echo $value->size_sqft; ?>,<?php echo $value->shop_price_sqft == '' ? $value->price_sqft : $value->shop_price_sqft; ?>)" class="btn btn-sm btn-info">Select</a>
+						<a onclick="selectUnit(<?php echo $value->unit_id; ?>,<?= $value->project_id; ?>,<?php echo $value->floor_id; ?>,<?php echo $value->shop_price_sqft == '' ? $value->size_sqft * $value->price_sqft : $value->size_sqft * $value->shop_price_sqft; ?>,<?php echo $value->size_sqft; ?>,<?php echo $value->shop_price_sqft == '' ? $value->price_sqft : $value->shop_price_sqft; ?>)" class="btn btn-sm btn-info">Select</a>
 						<?php else: ?>
 						<a disabled class="btn btn-sm btn-info">Select</a>
 						<?php endif ?>

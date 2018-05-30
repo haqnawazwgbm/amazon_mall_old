@@ -183,25 +183,53 @@
                                             <th>Paid</th>
                                             <th>Comments</th>
                                         </tr>
+                                      
                                         <?php $CI =& get_instance(); 
-                                            foreach ($installments as $installment) : 
-                                                $payments = $CI->get_payment_method($installment['installment_id']);
-                                                foreach ($payments as $payment) : 
+                                                $payments = $CI->get_payment_method($sale['sale_id']);
+                                            if ($payments[0]) : 
                                         ?>
                                         <tr>
-                                            <td><?= ucfirst($payment['pay_for']); ?></td>
-                                            <td><?= ucfirst($payment['method']); ?></td>
-                                            <td><?= ucfirst($payment['bank']); ?></td>
-                                            <td><?= $payment['cheque']; ?></td>
+                                            <td><?= ucfirst($payments[0]['pay_for']); ?></td>
+                                            <td><?= ucfirst($payments[0]['method']); ?></td>
+                                            <td><?= ucfirst($payments[0]['bank']); ?></td>
+                                            <td><?= $payments[0]['cheque']; ?></td>
                                             <td><?= date('d-F-Y', strtotime($payment['date'])); ?></td>
+                                            <td>PKR</td>
+                                            <td><?= $payments[0]['down_payment']; ?></td>
+                                            <td><?= $payments[0]['down_payment']; ?></td>
+                                            <td><?= $payments[0]['note']; ?></td>
+                                        </tr>
+                                    <?php endif;
+                                            if ($payments[1]) : ?>
+                                         <tr>
+                                            <td><?= ucfirst($payments[1]['pay_for']); ?></td>
+                                            <td><?= ucfirst($payments[1]['method']); ?></td>
+                                            <td><?= ucfirst($payments[1]['bank']); ?></td>
+                                            <td><?= $payments[1]['cheque']; ?></td>
+                                            <td><?= date('d-F-Y', strtotime($payments['date'])); ?></td>
+                                            <td>PKR</td>
+                                            <td><?= $payments[1]['token_money']; ?></td>
+                                            <td><?= $payments[1]['token_money']; ?></td>
+                                            <td><?= $payments[1]['note']; ?></td>
+                                        </tr>
+
+                                    <?php
+                                        endif;
+
+                                        foreach ($installments as $installment) :  
+                                       ?>
+                                        <tr>
+                                            <td><?= ucfirst($installment['pay_for']); ?></td>
+                                            <td><?= ucfirst($installment['method']); ?></td>
+                                            <td><?= ucfirst($installment['bank']); ?></td>
+                                            <td><?= $installment['cheque']; ?></td>
+                                            <td><?= date('d-F-Y', strtotime($installment['date'])); ?></td>
                                             <td>PKR</td>
                                             <td><?= $installment['amount']; ?></td>
                                             <td><?= $installment['paid']; ?></td>
                                             <td><?= $installment['note']; ?></td>
                                         </tr>
-                                    <?php 
-                                            endforeach; 
-                                        endforeach; ?>
+                                    <?php endforeach; ?>
                                     
                                     </tbody></table>
                                 </div>

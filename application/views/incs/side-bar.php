@@ -133,7 +133,7 @@
         <li class="xn-openable">
             <a href="<?php echo base_url();?>Reports">
                 <span class="fa fa-file-o"></span> 
-                <span class="xn-text">Reports</span>
+                <span class="xn-text">General Reports</span>
             </a>
             <ul>
                 <li><a href="<?php echo base_url();?>Reports/ClientDetailReport">Client Detail Report</a></li>
@@ -150,6 +150,22 @@
                 <?php endif; ?>
             </ul>
         </li>  
+        <?php if ($type == "Accountant" || $type == "Admin"): ?>
+          <li class="xn-openable">
+            <a href="<?php echo base_url();?>Reports">
+                <span class="fa fa-file-o"></span> 
+                <span class="xn-text">Accounts Reports</span>
+            </a>
+            <ul>
+                <li><a href="<?php echo base_url();?>Reports/receivable_report">Receivable Summary Report</a></li>
+                <li><a href="<?php echo base_url();?>Reports/Salesreports">Sale Summary Report</a></li>
+                <li><a href="<?php echo base_url();?>Reports/installments">Installments Due Report</a></li>
+                <li><a href="<?php echo base_url();?>Reports/rebate_report">Rebate Report</a></li>
+                <li><a href="<?php echo base_url();?>Reports/daily_progress_report">Daily Progress Report</a></li>
+              
+            </ul>
+        </li> 
+     <?php endif; ?>
         <li>
             <a href="<?php echo base_url() ?>Projects">
                 <span class="fa fa-file-o"></span>Projects

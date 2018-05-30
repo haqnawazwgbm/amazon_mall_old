@@ -1,5 +1,5 @@
 <br>
-<a href="<?php echo base_url('Reports/pdfsaleAllReport'); ?>" class="btn btn-primary">Print PDF</a>
+<a href="<?php echo base_url('Reports/pdf_receivable_report'); ?>" class="btn btn-primary">Print PDF</a>
 <button style="margin-left:1em;" tableexport-id="396a47fc-xls" href="#" class="btn btn-primary xls">Print Excel</button>
 <?php 
 $total_remaining_amount = 0;

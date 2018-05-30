@@ -67,7 +67,7 @@ td, th {
 
     <!-- Modal -->
     <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">New Project Details</h5>
@@ -75,7 +75,10 @@ td, th {
             <form id="Projects">
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-6">
+                             <h4>
+                                Project Details
+                            </h4><hr>
                             <div class="form-group">                                        
                                 <label class="col-md-6 col-xs-12 control-label">Project Name</label>
                                 <div class="col-md-12 col-xs-12">
@@ -107,6 +110,39 @@ td, th {
                                 </div>
                             </div>
                         </div>
+                         <div class="col-md-6">
+                            <h4>
+                                Commission Details
+                            </h4><hr>
+                            <div class="form-group">                                        
+                                <label class="col-md-6 col-xs-12 control-label">Commission Title</label>
+                                <div class="col-md-12 col-xs-12">
+                                    <input type="text" class="form-control" value="<?php //echo $project->size_sqft; ?>" name="commission_title" id="commission_title" />
+                                </div>
+                               
+                            </div>
+                            <div class="form-group">                                        
+                                <label class="col-md-6 col-xs-12 control-label"><br>Commission Percentage</label>
+                                <div class="col-md-12 col-xs-12">
+                                    <input type="number" class="form-control" id="commission_percentage" value="<?php //echo $project->size_sqft; ?>" name="commission_percentage" />
+                                </div>
+                             
+                            </div>
+                            <div class="form-group">                                        
+                                <label class="col-md-6 col-xs-12 control-label"><br>From Date</label>
+                                <div class="col-md-12 col-xs-12">
+                                    <input type="text" class="form-control datepicker" value="<?php //echo $project->size_sqft; ?>" id="from_date" name="from_date" />
+                                </div>
+                             
+                            </div>
+                            <div class="form-group">                                        
+                                <label class="col-md-6 col-xs-12 control-label"><br>To Date</label>
+                                <div class="col-md-12 col-xs-12">
+                                    <input type="text" class="form-control datepicker" value="<?php // echo $project->size_sqft; ?>" id="to_date" name="to_date" />
+                                </div>
+                               
+                            </div>
+                         </div>
                     </div>              
                 </div>
                 <div class="modal-footer">
@@ -120,7 +156,7 @@ td, th {
 <!-- END PRELOADS -->  
 <!-- Performing Edit/ View -->
 <div class="modal fade" id="loadDatas" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content" >
             <div id="givedata"></div>
         </div> 

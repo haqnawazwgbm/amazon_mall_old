@@ -570,9 +570,10 @@ class Cif extends CI_Controller
  		$result = $this->Admin->getRows($con, 'basic_floors');
  		if ($result['type'] == 'space') {
  			$result['free_space'] = $result['size_sqft'] - $result['free_space'];
+ 			$result['project_id'] = $project;
  			$this->load->view('cif/floor_search_result',array('floor' => $result));
  		} else {
- 			$selectFields 	= 'A.size_sqft,A.price_sqft as shop_price_sqft,A.unit_id,A.sold,A.size_sqft,B.price_sqft,A.unit_type,B.floor_id,B.type';
+ 			$selectFields 	= 'A.size_sqft,A.price_sqft as shop_price_sqft,A.unit_id,A.sold,A.size_sqft,B.price_sqft,A.unit_type,B.floor_id,B.type, C.project_id';
 	 		$firstTable 	= 'sales_units as A';
 			$secondTable 	= 'basic_floors as B';
 			$onFields		= 'B.floor_id = A.floor_id';
@@ -670,6 +671,7 @@ class Cif extends CI_Controller
  		$totalYears   = $this->input->post('totalyears');
  		$unitid   	  = $this->input->post('unitid');
  		$floorid      = $this->input->post('floorid');
+ 		$project_id   = $this->input->post('project_id');
  		$clientid     = $this->input->post('clientid');
  		$discount     = $this->input->post('discount');
  		$pricepersqft = $this->input->post('price');
@@ -701,6 +703,7 @@ class Cif extends CI_Controller
  			'token_money' => $tokenMoney,
  			'down_payment' => $downPayment,
  			'installments' => $totalYears,
+ 			'project_id' => $project_id,
  			'floor_id' => $floorid,
  			'sale_date' => date("Y-m-d"),
  			'added_by' => $this->session->userdata('user_id'),
@@ -716,6 +719,23 @@ class Cif extends CI_Controller
  		// Updating Unit Status
  		if (! $unitid == 0) {
  			$updateUnit = $this->Admin->UpdateDB('sales_units',array('unit_id' => $unitid, 'floor_id' => $floorid),array('sold' => 2,'sale_date' => date("Y-m-d")));
+
+ 			//Saving user commission
+ 			$con['conditions'] = array(
+ 				'project_id' => $project_id
+ 			);
+ 			$con['returnType'] = 'single';
+ 			$project = $this->Admin->getRows($con, 'project');
+ 			$commission_data = array(
+ 				'user_id' => $this->agent_id,
+ 				'sale_id' => $soldid,
+ 				'commission_title' => $project['commission_title'],
+ 				'commission_percentage' => $project['commission_percentage'],
+ 				'from_date' => $project['from_date'],
+ 				'to_date' => $project['to_date']
+ 			);
+ 			$this->Admin->InsertData('rebates', $commission_data);
+
  		}
  		
  		//  Now Uploading Installments for User

@@ -24,6 +24,70 @@ class Reports extends CI_Controller
 		$this->load->view('reports/sale_report',$data);
 	}
 
+	function receivable_report() {
+		$data['projects'] = $this->Admin->getAllData('project');
+		$this->load->view('reports/receivable_report',$data);
+	}
+
+	function get_receivable_report() {
+		$Project = $this->input->post('project');
+		$From = $this->input->post('from');
+		$To = $this->input->post('to');
+
+		if ($Project !="Select Project" && !empty($From) && !empty($To)):
+
+			$data['filterData'] = array(
+				'C.project_id' => $Project,
+				'A.sale_date >' => $From, 
+				'A.sale_date <' => $To,
+				'B.sold' => 1,
+			);
+			$con['conditions'] = array(
+				'project.project_id' => $Project
+			);
+			$con['returnType'] = 'object';
+			$data['project'] = $this->Admin->getRows($con, 'project');
+			$this->load->view('reports/list_receivable_report',$data);
+		elseif ($Project != "Select Project" && empty($From) && empty($To)) :
+			$data['filterData'] = array(
+				'C.project_id' => $Project,
+				'B.sold' => 1,
+			);
+			$con['conditions'] = array(
+				'project.project_id' => $Project
+			);
+			$con['returnType'] = 'object';
+			$data['project'] = $this->Admin->getRows($con, 'project');
+			$this->load->view('reports/list_receivable_report',$data);
+		elseif ($Project != "Select Project" && empty($From) && empty($To)) :
+			$data['filterData'] = array(
+				'C.project_id' => $Project,
+				'B.sold' => 1,
+			);
+			$con['conditions'] = array(
+				'project.project_id' => $Project
+			);
+			$con['returnType'] = 'object';
+			$data['project'] = $this->Admin->getRows($con, 'project');
+			$this->load->view('reports/list_receivable_report',$data);
+		elseif(!empty($From) && !empty($To)):
+			$data['filterData'] = array(
+				'A.sale_date >' => $From, 
+				'A.sale_date <' => $To,
+				'B.sold' => 1,
+			);
+			$data['project'] = $this->Admin->getAllData('project');
+			$this->load->view('reports/list_receivable_report',$data);
+		else:
+			$data['filterData'] = array(
+				'A.recieved_downpayment' => 1,
+				'B.sold' => 1,
+			);
+			$data['project'] = $this->Admin->getAllData('project');
+			$this->load->view('reports/list_receivable_report',$data);
+		endif;
+	}
+
 	function SaleReport()
 	{
 		$Project = $this->input->post('project');
@@ -41,21 +105,7 @@ class Reports extends CI_Controller
 		endif;
 
 		if ($Project !="Select Project" && $Floor!="Select Floor" && !empty($From) && !empty($To)):
-			
-	/*		$SaleAdmin = $this->Admin->DJoin(
-							'A.sale_id,A.pricesqft,A.sale_date,C.project_name,C.project_location,D.unit_type,B.floor_types,D.size_sqft, U.fullname',
-							'sale as A',
-							'basic_floors as B',
-							array(
-								'project as C' => 'C.project_id = B.project_id',
-								'sales_units as D' => 'D.unit_id = A.unit_id',
-								'users as U' => 'U.user_id = A.user_id' 
-							),
-							'A.floor_id = B.floor_id',
-							$FilterData,
-							'A.sale_date ASC'
-						);
-			$data['Report'] = $SaleAdmin;*/
+
 			$data['filterData'] = array(
 				'C.project_id' => $Project,
 				'A.floor_id' => $Floor,
@@ -501,6 +551,14 @@ class Reports extends CI_Controller
 		$this->ppdf->pdf->Output("assets/uploads/files/".$filename, "D");
 	}
 
+	function pdf_receivable_report() {
+		$filename = time().".pdf";
+		$data['project'] = $this->Admin->getAllData('project');
+		$html = $this->load->view('reports/pdf_receivable_report',$data,TRUE);
+		$this->ppdf->pdf->WriteHTML($html);
+		$this->ppdf->pdf->Output("assets/uploads/files/".$filename, "D");
+	}
+
 	function InventoryReport()
 	{
 		$data['project'] = $this->Admin->getAllData('project');
@@ -794,20 +852,240 @@ class Reports extends CI_Controller
 
         $con = array();
         $con['conditions'] = array(
-        	'sale_id' => $sale_id
+        	'installments.sale_id' => $sale_id,
+        	'installments.status' => 1,
+        	'payment_methods.pay_for' => 'Installment'
         );
+        $con['innerJoin'] = array(array(
+			'table' => 'payment_methods',
+			'condition' => 'payment_methods.column_id = installments.installment_id',
+			'joinType' => 'inner'
+		));
         $data['installments'] = $this->Admin->getRows($con, 'installments');
-                                                
         $this->load->view('reports/payment_report', $data);
 	}
 
-	function get_payment_method($installment_id) {
-		$con['conditions'] = array(
-			'column_id' => $installment_id
-		);
+	function get_payment_method($sale_id) {
+		
+		$con['string_conditions'] = "payment_methods.column_id = $sale_id and payment_methods.pay_for = 'DownPayment'
+									or payment_methods.column_id = $sale_id and payment_methods.pay_for = 'Token'"; 
+		$con['innerJoin'] = array(array(
+			'table' => 'sale',
+			'condition' => 'sale.sale_id = payment_methods.column_id',
+			'joinType' => 'inner'
+		));
+		$con['orderBy'] = 'payment_methods.pay_for asc';
 		$payments = $this->Admin->getRows($con, 'payment_methods');
 		$payments = $payments ? $payments : array();
+	
 		return $payments;
+	}
+
+	function daily_progress_report() {
+		$today = date('Y-m-d');
+		// query for sale
+		$con['selection'] = 'project.project_name, basic_floors.floor_types, sales_units.size_sqft as unit_size, basic_floors.price_sqft, sales_units.price_sqft as unit_price, sales_units.unit_type, users.fullname';
+		$con['conditions'] = array(
+			'sale.sale_date' => $today,
+			'sale.resale' => 0
+		);
+		$con['innerJoin'] = array(
+				array(
+		            'table' => 'basic_floors',
+		            'condition' =>'sale.floor_id = basic_floors.floor_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'users',
+		            'condition' =>'sale.user_id = users.user_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'sales_units',
+		            'condition' =>'sale.unit_id = sales_units.unit_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'project',
+		            'condition' =>'basic_floors.project_id = project.project_id',
+		            'joinType' => 'inner'
+		    ));
+		$sales = $this->Admin->getRows($con, 'sale');
+		$data['sales'] = $sales ? $sales : array();
+
+		// query for payment transactions.
+		$con = array();
+		$con['selection'] = 'project.project_name, basic_floors.floor_types, sales_units.unit_type, sales_units.size_sqft as unit_size, basic_floors.price_sqft, sales_units.price_sqft as unit_price, users.fullname, sale.token_money, sale.down_payment, payment_methods.*, sale.sale_id';
+		$con['conditions'] = array(
+			'payment_methods.date' => $today,
+			'payment_methods.pay_for' => 'Token'
+		);
+		$con['orderBy'] = 'payment_methods.pay_for asc';
+		$con['innerJoin'] = array(array(
+			'table' => 'sale',
+			'condition' => 'sale.sale_id = payment_methods.column_id',
+			'joinType' => 'inner'
+		),array(
+			'table' => 'users',
+			'condition' => 'sale.user_id = users.user_id',
+			'joinType' => 'inner'
+		),array(
+		    'table' => 'basic_floors',
+		    'condition' =>'sale.floor_id = basic_floors.floor_id',
+		    'joinType' => 'inner'
+		 ),array(
+		    'table' => 'project',
+		    'condition' =>'basic_floors.project_id = project.project_id',
+		    'joinType' => 'inner'
+		),array(
+		    'table' => 'sales_units',
+		    'condition' =>'sale.unit_id = sales_units.unit_id',
+		    'joinType' => 'inner'
+		));
+		$con['returnType'] = 'single';
+			// Query for token money transaction.
+		$token = $this->Admin->getRows($con, 'payment_methods');
+		$data['token'] = $token ? $token : array();
+			// Query for down payment transaction
+		$con['conditions'] = array(
+			'payment_methods.date' => $today,
+			'payment_methods.pay_for' => 'DownPayment'
+		);
+		$con['returnType'] = 'single'; 
+		$downpayment = $this->Admin->getRows($con, 'payment_methods');
+		$data['downpayment'] = $downpayment ? $downpayment : array();
+			// Query for installment transaction.
+		$con['selection'] = $con['selection'] . ', installments.paid';
+		$con['conditions'] = array(
+			'payment_methods.date' => $today,
+			'payment_methods.pay_for' => 'Installment'
+		);
+		$con['innerJoin'] = array(array(
+			'table' => 'installments',
+			'condition' => 'installments.installment_id = payment_methods.column_id',
+			'joinType' => 'inner'
+		),array(
+			'table' => 'sale',
+			'condition' => 'sale.sale_id = installments.sale_id',
+			'joinType' => 'inner'
+		),array(
+			'table' => 'users',
+			'condition' => 'sale.user_id = users.user_id',
+			'joinType' => 'inner'
+		),array(
+		    'table' => 'basic_floors',
+		    'condition' =>'sale.floor_id = basic_floors.floor_id',
+		    'joinType' => 'inner'
+		 ),array(
+		    'table' => 'project',
+		    'condition' =>'basic_floors.project_id = project.project_id',
+		    'joinType' => 'inner'
+		),array(
+		    'table' => 'sales_units',
+		    'condition' =>'sale.unit_id = sales_units.unit_id',
+		    'joinType' => 'inner'
+		));
+		unset($con['returnType']);
+		unset($con['orderBy']);
+		$installments = $this->Admin->getRows($con, 'payment_methods');
+		$data['installments'] = $installments ? $installments : array();
+
+		// query for transfer unit
+		$con = array();
+		$con['selection'] = 'project.project_name, basic_floors.floor_types, sales_units.unit_type, sales_units.size_sqft as unit_size, basic_floors.price_sqft, sales_units.price_sqft as unit_price, F.fullname as from_user, T.fullname as to_user, resales.*';
+		$con['string_conditions'] = array(
+			'date(resales.created_at)' => $today
+		);
+		$con['innerJoin'] = array(array(
+			'table' => 'sale',
+			'condition' => 'sale.sale_id = resales.sale_id',
+			'joinType' => 'inner'
+		),array(
+			'table' => 'users as F',
+			'condition' => 'resales.from_user_id = F.user_id',
+			'joinType' => 'inner'
+		),array(
+			'table' => 'users as T',
+			'condition' => 'resales.to_user_id = T.user_id',
+			'joinType' => 'inner'
+		),array(
+		    'table' => 'basic_floors',
+		    'condition' =>'sale.floor_id = basic_floors.floor_id',
+		    'joinType' => 'inner'
+		 ),array(
+		    'table' => 'project',
+		    'condition' =>'basic_floors.project_id = project.project_id',
+		    'joinType' => 'inner'
+		),array(
+		    'table' => 'sales_units',
+		    'condition' =>'sale.unit_id = sales_units.unit_id',
+		    'joinType' => 'inner'
+		));
+		$resales = $this->Admin->getRows($con, 'resales');
+		$data['resales'] = $resales ? $resales : array();
+
+		// query for buyback unit
+		$con = array();
+		$con['selection'] = 'project.project_name, basic_floors.floor_types, sales_units.unit_type, sales_units.size_sqft as unit_size, basic_floors.price_sqft, sales_units.price_sqft as unit_price, users.fullname as from_user, takeback.*';
+		$con['string_conditions'] = array(
+			'date(takeback.created_at)' => $today
+		);
+		$con['innerJoin'] = array(array(
+			'table' => 'sale',
+			'condition' => 'sale.sale_id = takeback.sale_id',
+			'joinType' => 'inner'
+		),array(
+			'table' => 'users',
+			'condition' => 'takeback.user_id = users.user_id',
+			'joinType' => 'inner'
+		),array(
+		    'table' => 'basic_floors',
+		    'condition' =>'sale.floor_id = basic_floors.floor_id',
+		    'joinType' => 'inner'
+		 ),array(
+		    'table' => 'project',
+		    'condition' =>'basic_floors.project_id = project.project_id',
+		    'joinType' => 'inner'
+		),array(
+		    'table' => 'sales_units',
+		    'condition' =>'sale.unit_id = sales_units.unit_id',
+		    'joinType' => 'inner'
+		));
+		$buy_backes = $this->Admin->getRows($con, 'takeback');
+		$data['buy_backes'] = $buy_backes ? $buy_backes : array();
+		
+		$this->load->view('reports/daily_progress_report', $data);
+	}
+
+	function rebate_report() {
+		$con['selection'] = 'project.project_name, basic_floors.floor_types, sales_units.size_sqft as unit_size, basic_floors.price_sqft, sales_units.price_sqft as unit_price, sales_units.unit_type, C.fullname as client, A.fullname as agent, rebates.*';
+		$con['conditions'] = array();
+		$con['innerJoin'] = array(
+				array(
+		            'table' => 'sale',
+		            'condition' =>'sale.sale_id = rebates.sale_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'basic_floors',
+		            'condition' =>'sale.floor_id = basic_floors.floor_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'users as C',
+		            'condition' =>'sale.user_id = C.user_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'users as A',
+		            'condition' =>'rebates.user_id = A.user_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'sales_units',
+		            'condition' =>'sale.unit_id = sales_units.unit_id',
+		            'joinType' => 'inner'
+		        ),array(
+		            'table' => 'project',
+		            'condition' =>'basic_floors.project_id = project.project_id',
+		            'joinType' => 'inner'
+		   	));
+		$rebates = $this->Admin->getRows($con, 'rebates');
+		$data['rebates'] = $rebates ? $rebates : array();
+		$this->load->view('reports/rebate_report', $data);
 	}
 
 }

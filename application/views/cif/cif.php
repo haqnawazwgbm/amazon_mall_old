@@ -96,6 +96,7 @@
 						<input type="hidden" id="clientid" value="" name="clientid">
 						<input type="hidden" id="TotalPrice" value="" name="TotalPrice">
 						<input type="hidden" id="unit_get_id" value="" name="unit_get_id">
+						<input type="hidden" id="project_get_id" value="" name="project_get_id">
 						<input type="hidden" id="floor_get_id" value="" name="floor_get_id">
 						<input type="hidden" id="token_get_money" value="" name="token_get_money">
 						<input type="hidden" id="downpayment_get_money" value="" name="downpayment_get_money">
@@ -512,6 +513,7 @@
 			downpayment:  $('#downpayment').val(),
 			unitid:  	  $('#unit_get_id').val(),
 			floorid:      $('#floor_get_id').val(),
+			project_id:      $('#project_get_id').val(),
 			clientid:     $('#clientid').val(),
 			totalyears:   $('#totalyears').val(),
 			discount:     $('#discountinput').val(),
@@ -573,12 +575,13 @@
 		$('#cifForm').toggle('fast');
 	});
 	// On Search Select 
-	function selectUnit(id,floor,total,size,price) {
+	function selectUnit(id,project_id,floor,total,size,price) {
 		$('#discount_square_feet').html('Size Per Square Feet: <span>' + size + '</span>');
 		$('#unit_get_id').val(id);
 		$('#totalPriceofTheUnit').html('Rs.'+total);
 		$('#PricePerSquareFeet').html('Rs.'+price);
 		$('#floor_get_id').val(floor);
+		$('#project_get_id').val(project_id);
 		$('#size').val(size);
 		$('#price').val(price);
 		$('#discount').show();

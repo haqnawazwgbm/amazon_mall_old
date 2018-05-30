@@ -8,7 +8,10 @@ $project =json_decode($project)[0];
     <form id="ModifyProject">
         <div class="modal-body">
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-6">
+                    <h4>
+                        Project Details
+                    </h4><hr>
                     <div class="form-group">                                        
                         <label class="col-md-6 col-xs-12 control-label">Project Name</label>
                         <div class="col-md-12 col-xs-12">
@@ -40,8 +43,43 @@ $project =json_decode($project)[0];
                         </div>
                         <input type="hidden" name="project_id" value="<?php echo $project->project_id; ?>">
                         <div class="clearfix"></div>
-                        <br><br>
+                      
                     </div>
+                </div>
+                <div class="col-md-6">
+                    <h4>
+                        Commission Details
+                    </h4><hr>
+                    <div class="form-group">                                        
+                        <label class="col-md-6 col-xs-12 control-label">Commission Title</label>
+                        <div class="col-md-12 col-xs-12">
+                            <input type="text" class="form-control" value="<?php echo $project->commission_title; ?>" name="commission_title" id="commission_title" />
+                        </div>
+                       
+                    </div>
+                    <div class="form-group">                                        
+                        <label class="col-md-6 col-xs-12 control-label"><br>Commission Percentage</label>
+                        <div class="col-md-12 col-xs-12">
+                            <input type="number" class="form-control" id="commission_percentage" value="<?php echo $project->commission_percentage; ?>" name="commission_percentage" />
+                        </div>
+                     
+                    </div>
+                    <div class="form-group">                                        
+                        <label class="col-md-6 col-xs-12 control-label"><br>From Date</label>
+                        <div class="col-md-12 col-xs-12">
+                            <input type="text" class="form-control datepicker" value="<?php echo $project->from_date; ?>" id="from_date" name="from_date" />
+                        </div>
+                     
+                    </div>
+                    <div class="form-group">                                        
+                        <label class="col-md-6 col-xs-12 control-label"><br>To Date</label>
+                        <div class="col-md-12 col-xs-12">
+                            <input type="text" class="form-control datepicker" value="<?php  echo $project->to_date; ?>" id="to_date" name="to_date" />
+                        </div>
+                       
+                    </div>
+                </div>
+
                 </div>             
             </div>
 
